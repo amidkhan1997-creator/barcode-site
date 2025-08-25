@@ -1,40 +1,78 @@
-index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Barcode Generator & Scanner</title>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-    input, button { margin: 10px; padding: 10px; font-size: 16px; }
-    #barcode { margin-top: 20px; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All-in-One Barcode & Text Tool</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    section { border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 10px; }
+    h2 { color: #444; }
+    #barcode { margin-top: 10px; }
+    #reader { width: 300px; margin: auto; }
+    #preview { max-width: 300px; margin-top: 10px; }
+  </style>
 </head>
 <body>
-  <h1>📦 Barcode Generator & Scanner</h1>
-  <h2>🔹 Generate Barcode</h2>
-  <input type="text" id="barcodeText" placeholder="Enter text to generate" />
-  <button onclick="generateBarcode()">Generate</button>
-  <br>
-  <svg id="barcode"></svg>
-  <h2>🔹 Scan Barcode</h2>
-  <div id="reader" style="width:300px; margin:auto;"></div>
-  <p id="scanResult"></p>
-  <script>
-    function generateBarcode() {
-      let text = document.getElementById("barcodeText").value;
-      if (text.trim() !== "") {
-        JsBarcode("#barcode", text, { format: "CODE128", displayValue: true });
-      }
-    }
-    function onScanSuccess(decodedText) {
-      document.getElementById("scanResult").innerText = "Scanned Result: " + decodedText;
-    }
-    let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-    html5QrcodeScanner.render(onScanSuccess);
-  </script>
+  <h1>📱 All-in-One Barcode & Text Tool</h1>
+
+  <!-- Barcode Generator -->
+  <section>
+    <h2>🖨️ Barcode Generator</h2>
+    <input type="text" id="barcodeInput" placeholder="Enter text..." />
+    <button onclick="generateBarcode()">Generate</button>
+    <br>
+    <svg id="barcode"></svg>
+  </section>
+
+  <!-- Barcode Scanner -->
+  <section>
+    <h2>📷 Barcode Scanner</h2>
+    <div id="reader"></div>
+    <p id="scanResult">Result: </p>
+  </section>
+
+  <!-- Photo to Text Scanner -->
+  <section>
+    <h2>📝 Photo to Text (Google Lens Style)</h2>
+    <input type="file" accept="image/*" capture="camera" onchange="processImage(event)">
+    <br>
+    <img id="preview" />
+    <p id="result">Detected text will appear here...</p>
+  </section>
+
+  <script>
+    // Barcode Generator
+    function generateBarcode() {
+      let value = document.getElementById("barcodeInput").value;
+      JsBarcode("#barcode", value, { format: "CODE128", displayValue: true });
+    }
+
+    // Barcode Scanner
+    function onScanSuccess(decodedText) {
+      document.getElementById("scanResult").innerText = "Result: " + decodedText;
+    }
+    new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }).render(onScanSuccess);
+
+    // Photo to Text Scanner
+    function processImage(event) {
+      let file = event.target.files[0];
+      if (!file) return;
+
+      let img = document.getElementById("preview");
+      img.src = URL.createObjectURL(file);
+
+      Tesseract.recognize(file, 'eng')
+        .then(({ data: { text } }) => {
+          document.getElementById("result").innerText = "📌 Detected Text: " + text;
+        })
+        .catch(err => {
+          document.getElementById("result").innerText = "Error: " + err;
+        });
+    }
+  </script>
 </body>
 </html>
