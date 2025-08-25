@@ -1,0 +1,40 @@
+index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barcode Generator & Scanner</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    input, button { margin: 10px; padding: 10px; font-size: 16px; }
+    #barcode { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>📦 Barcode Generator & Scanner</h1>
+  <h2>🔹 Generate Barcode</h2>
+  <input type="text" id="barcodeText" placeholder="Enter text to generate" />
+  <button onclick="generateBarcode()">Generate</button>
+  <br>
+  <svg id="barcode"></svg>
+  <h2>🔹 Scan Barcode</h2>
+  <div id="reader" style="width:300px; margin:auto;"></div>
+  <p id="scanResult"></p>
+  <script>
+    function generateBarcode() {
+      let text = document.getElementById("barcodeText").value;
+      if (text.trim() !== "") {
+        JsBarcode("#barcode", text, { format: "CODE128", displayValue: true });
+      }
+    }
+    function onScanSuccess(decodedText) {
+      document.getElementById("scanResult").innerText = "Scanned Result: " + decodedText;
+    }
+    let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>
