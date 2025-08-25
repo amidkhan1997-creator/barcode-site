@@ -9,9 +9,8 @@
   <style>
     body { background: #f9f9f9; font-family: Arial, sans-serif; }
     .container { max-width: 900px; margin-top: 40px; }
-    .barcode { margin: 15px; display: inline-block; }
+    .barcode { margin: 10px; display: inline-block; }
     .card { border-radius: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-    textarea { border-radius: 12px; }
     video { width: 100%; border-radius: 15px; margin-top: 10px; }
   </style>
 </head>
@@ -27,7 +26,7 @@
 
     <!-- Camera Capture -->
     <h5 class="mt-4">📷 Camera OCR (Click photo → Extract text → Barcode)</h5>
-    <video id="camera" autoplay></video>
+    <video id="camera" autoplay playsinline></video>
     <button class="btn btn-success w-100 mt-2" onclick="capturePhoto()">📸 Capture & Generate</button>
     <canvas id="snapshot" class="d-none"></canvas>
 
@@ -51,10 +50,18 @@
     });
   }
 
-  // Camera setup
+  // Camera setup (try back camera first)
   const video = document.getElementById("camera");
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => { video.srcObject = stream; });
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { exact: "environment" } } // back camera
+  })
+  .then(stream => { video.srcObject = stream; })
+  .catch(err => {
+    // if back camera not available, fallback to default
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { video.srcObject = stream; })
+      .catch(e => alert("Camera not accessible: " + e));
+  });
 
   // Capture photo + OCR + barcode
   async function capturePhoto() {
@@ -69,7 +76,7 @@
       document.getElementById("inputText").value = text.trim();
       generateBarcodes(text.trim());
     } else {
-      alert("No text detected!");
+      alert("❌ No text detected in image!");
     }
   }
 </script>
