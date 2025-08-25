@@ -2,77 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>All-in-One Barcode & Text Tool</title>
+  <title>Multi Barcode Generator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-    section { border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 10px; }
-    h2 { color: #444; }
-    #barcode { margin-top: 10px; }
-    #reader { width: 300px; margin: auto; }
-    #preview { max-width: 300px; margin-top: 10px; }
+    body { background: #f9f9f9; font-family: Arial, sans-serif; }
+    .container { max-width: 900px; margin-top: 40px; }
+    .barcode { margin: 15px; display: inline-block; }
+    .card { border-radius: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    textarea { border-radius: 12px; }
+    video { width: 100%; border-radius: 15px; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>📱 All-in-One Barcode & Text Tool</h1>
+<div class="container">
+  <div class="card p-4">
+    <h2 class="text-center mb-4">📦 Multi Barcode Generator</h2>
+    
+    <!-- Text Input -->
+    <label class="fw-bold">Enter Text (one per line):</label>
+    <textarea id="inputText" rows="5" class="form-control mb-3" placeholder="Type or paste multiple lines..."></textarea>
+    <button class="btn btn-primary w-100 mb-3" onclick="generateBarcodes()">Generate Barcodes</button>
 
-  <!-- Barcode Generator -->
-  <section>
-    <h2>🖨️ Barcode Generator</h2>
-    <input type="text" id="barcodeInput" placeholder="Enter text..." />
-    <button onclick="generateBarcode()">Generate</button>
-    <br>
-    <svg id="barcode"></svg>
-  </section>
+    <!-- Camera Capture -->
+    <h5 class="mt-4">📷 Camera OCR (Click photo → Extract text → Barcode)</h5>
+    <video id="camera" autoplay></video>
+    <button class="btn btn-success w-100 mt-2" onclick="capturePhoto()">📸 Capture & Generate</button>
+    <canvas id="snapshot" class="d-none"></canvas>
 
-  <!-- Barcode Scanner -->
-  <section>
-    <h2>📷 Barcode Scanner</h2>
-    <div id="reader"></div>
-    <p id="scanResult">Result: </p>
-  </section>
+    <!-- Output -->
+    <div id="output" class="mt-4 text-center"></div>
+  </div>
+</div>
 
-  <!-- Photo to Text Scanner -->
-  <section>
-    <h2>📝 Photo to Text (Google Lens Style)</h2>
-    <input type="file" accept="image/*" capture="camera" onchange="processImage(event)">
-    <br>
-    <img id="preview" />
-    <p id="result">Detected text will appear here...</p>
-  </section>
+<script>
+  // Generate multiple barcodes
+  function generateBarcodes(texts) {
+    let input = texts || document.getElementById("inputText").value;
+    let lines = input.split("\n").filter(l => l.trim() !== "");
+    let output = document.getElementById("output");
+    output.innerHTML = "";
+    lines.forEach((line, i) => {
+      let svg = document.createElement("svg");
+      svg.classList.add("barcode");
+      JsBarcode(svg, line.trim(), {format: "CODE128", width: 2, height: 60, displayValue: true});
+      output.appendChild(svg);
+    });
+  }
 
-  <script>
-    // Barcode Generator
-    function generateBarcode() {
-      let value = document.getElementById("barcodeInput").value;
-      JsBarcode("#barcode", value, { format: "CODE128", displayValue: true });
+  // Camera setup
+  const video = document.getElementById("camera");
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => { video.srcObject = stream; });
+
+  // Capture photo + OCR + barcode
+  async function capturePhoto() {
+    let canvas = document.getElementById("snapshot");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+    
+    let { data: { text } } = await Tesseract.recognize(canvas, "eng");
+    if(text.trim()){
+      document.getElementById("inputText").value = text.trim();
+      generateBarcodes(text.trim());
+    } else {
+      alert("No text detected!");
     }
-
-    // Barcode Scanner
-    function onScanSuccess(decodedText) {
-      document.getElementById("scanResult").innerText = "Result: " + decodedText;
-    }
-    new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }).render(onScanSuccess);
-
-    // Photo to Text Scanner
-    function processImage(event) {
-      let file = event.target.files[0];
-      if (!file) return;
-
-      let img = document.getElementById("preview");
-      img.src = URL.createObjectURL(file);
-
-      Tesseract.recognize(file, 'eng')
-        .then(({ data: { text } }) => {
-          document.getElementById("result").innerText = "📌 Detected Text: " + text;
-        })
-        .catch(err => {
-          document.getElementById("result").innerText = "Error: " + err;
-        });
-    }
-  </script>
+  }
+</script>
 </body>
 </html>
